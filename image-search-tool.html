@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ricerca Immagini — Tool Redazione</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1a1a;
+    --ink-2: #555;
+    --ink-3: #999;
+    --rule: #e0ddd8;
+    --rule-2: #ccc;
+    --bg: #faf9f7;
+    --surface: #fff;
+    --green-bg: #eef5e8;
+    --green-text: #3a6b1a;
+    --blue-bg: #e8f0fb;
+    --blue-text: #1a4a99;
+    --accent: #c8451a;
+    --radius: 6px;
+    --radius-lg: 10px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    border-bottom: 1px solid var(--rule);
+    background: var(--surface);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar-brand {
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-brand span {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+  }
+  .api-status {
+    font-size: 12px;
+    color: var(--ink-3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--rule);
+    background: var(--bg);
+    transition: background 0.15s;
+  }
+  .api-status:hover { background: #f0ede8; }
+  .api-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--rule-2);
+  }
+  .api-dot.active { background: #5aaa3a; }
+
+  /* ── Layout ── */
+  .main {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(28px, 5vw, 42px);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .hero p {
+    font-size: 14px;
+    color: var(--ink-2);
+    max-width: 520px;
+  }
+
+  /* ── API key panel ── */
+  .api-panel {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+    display: none;
+  }
+  .api-panel.visible { display: block; }
+  .api-panel label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  .api-row { display: flex; gap: 8px; }
+  .api-input {
+    flex: 1;
+    padding: 9px 12px;
+    border: 1px solid var(--rule-2);
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-family: 'DM Sans', monospace;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .api-input:focus { outline: none; border-color: var(--accent); }
+  .btn-save-key {
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    border-radius: var(--radius);
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    transition: opacity 0.15s;
+  }
+  .btn-save-key:hover { opacity: 0.85; }
+  .api-hint {
+    font-size: 12px;
+    color: var(--ink-3);
+    margin-top: 8px;
+  }
+  .api-hint a { color: var(--ink-2); }
+
+  /* ── Input area ── */
+  .input-section { margin-bottom: 1.5rem; }
+  .input-label {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    margin-bottom: 8px;
+    display: block;
+  }
+  textarea {
+    width: 100%;
+    min-height: 180px;
+    resize: vertical;
+    padding: 14px 16px;
+    border: 1px solid var(--rule-2);
+    border-radius: var(--radius-lg);
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--surface);
+    color: var(--ink);
+    line-height: 1.65;
+    transition: border-color 0.15s;
+  }
+  textarea:focus { outline: none; border-color: var(--ink); }
+
+  .btn-analyze {
+    width: 100%;
+    margin-top: 10px;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    letter-spacing: 0.01em;
+    transition: opacity 0.15s;
+  }
+  .btn-analyze:hover { opacity: 0.85; }
+  .btn-analyze:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ── Loading ── */
+  .loading {
+    text-align: center;
+    padding: 3rem 0;
+    color: var(--ink-3);
+    font-size: 14px;
+  }
+  .spinner {
+    display: inline-block;
+    width: 20px; height: 20px;
+    border: 2px solid var(--rule-2);
+    border-top-color: var(--ink-2);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 10px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Results ── */
+  .results-meta {
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .results-meta .meta-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--ink-3);
+    margin-bottom: 5px;
+  }
+  .results-meta .tema {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 1.5rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+  .leg-pill {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 12px;
+    animation: fadeUp 0.3s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .card:nth-child(1) { animation-delay: 0.05s; }
+  .card:nth-child(2) { animation-delay: 0.10s; }
+  .card:nth-child(3) { animation-delay: 0.15s; }
+  .card:nth-child(4) { animation-delay: 0.20s; }
+  .card:nth-child(5) { animation-delay: 0.25s; }
+  .card:nth-child(6) { animation-delay: 0.30s; }
+  .card:nth-child(7) { animation-delay: 0.35s; }
+
+  .card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .card-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 500;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .card-num.libera  { background: var(--green-bg); color: var(--green-text); }
+  .card-num.editoriale { background: var(--blue-bg); color: var(--blue-text); }
+  .card-desc {
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1.5;
+    flex: 1;
+  }
+
+  .query-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .query-box {
+    flex: 1;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--ink-2);
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 7px 11px;
+  }
+  .copy-btn {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    border-radius: var(--radius);
+    border: 1px solid var(--rule-2);
+    background: var(--surface);
+    color: var(--ink-2);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { background: var(--bg); border-color: var(--ink-2); }
+  .copy-btn.done { color: var(--green-text); border-color: var(--green-text); }
+
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  .badge.libera     { background: var(--green-bg); color: var(--green-text); }
+  .badge.editoriale { background: var(--blue-bg);  color: var(--blue-text);  }
+
+  .source-group { margin-bottom: 10px; }
+  .source-group:last-child { margin-bottom: 0; }
+  .source-label {
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--ink-3);
+    margin-bottom: 6px;
+  }
+  .links { display: flex; flex-wrap: wrap; gap: 5px; }
+  .link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 400;
+    padding: 5px 11px;
+    border-radius: var(--radius);
+    border: 1px solid var(--rule);
+    color: var(--ink-2);
+    text-decoration: none;
+    background: var(--surface);
+    transition: all 0.15s;
+  }
+  .link-btn:hover {
+    background: var(--bg);
+    border-color: var(--rule-2);
+    color: var(--ink);
+  }
+  .link-btn svg { width: 11px; height: 11px; opacity: 0.4; }
+
+  /* ── Error ── */
+  .error {
+    background: #fdf0ed;
+    border: 1px solid #f0c4b4;
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    color: #8a2e10;
+    font-size: 14px;
+    margin-top: 1rem;
+  }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-size: 12px;
+    color: var(--ink-3);
+    border-top: 1px solid var(--rule);
+    margin-top: 4rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <span></span>
+    Ricerca Immagini
+  </div>
+  <button class="api-status" id="apiStatusBtn" onclick="toggleApiPanel()">
+    <div class="api-dot" id="apiDot"></div>
+    <span id="apiStatusText">Configura API key</span>
+  </button>
+</div>
+
+<div class="main">
+
+  <div class="hero">
+    <h1>Trova le immagini<br>giuste per <em>ogni articolo.</em></h1>
+    <p>Incolla il testo dell'articolo: l'AI analizza i temi e genera 7 ricerche mirate con link diretti alle principali fonti fotografiche.</p>
+  </div>
+
+  <!-- API key panel -->
+  <div class="api-panel" id="apiPanel">
+    <label>Anthropic API Key</label>
+    <div class="api-row">
+      <input type="password" class="api-input" id="apiKeyInput" placeholder="sk-ant-api03-..." />
+      <button class="btn-save-key" onclick="saveKey()">Salva</button>
+    </div>
+    <p class="api-hint">La chiave viene salvata solo nel browser, non viene trasmessa a nessun server esterno. Ottienila su <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+  </div>
+
+  <!-- Input -->
+  <div class="input-section">
+    <label class="input-label">Testo dell'articolo</label>
+    <textarea id="article" placeholder="Incolla qui il testo completo dell'articolo. Più è completo, più i suggerimenti saranno precisi..."></textarea>
+    <button class="btn-analyze" id="btn" onclick="analyze()">Analizza e cerca immagini</button>
+  </div>
+
+  <div id="out"></div>
+
+</div>
+
+<footer>
+  Tool interno — powered by Claude AI
+</footer>
+
+<script>
+const EXT_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1V9M10 2h4m0 0v4m0-4L7 9"/></svg>`;
+
+// ── API key management ──
+function loadKey() {
+  return localStorage.getItem('anthropic_key') || '';
+}
+function saveKey() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  if (!k) return;
+  localStorage.setItem('anthropic_key', k);
+  updateStatus();
+  document.getElementById('apiPanel').classList.remove('visible');
+}
+function updateStatus() {
+  const k = loadKey();
+  const dot = document.getElementById('apiDot');
+  const txt = document.getElementById('apiStatusText');
+  if (k) {
+    dot.classList.add('active');
+    txt.textContent = 'API key configurata';
+  } else {
+    dot.classList.remove('active');
+    txt.textContent = 'Configura API key';
+  }
+}
+function toggleApiPanel() {
+  const p = document.getElementById('apiPanel');
+  const isVisible = p.classList.contains('visible');
+  p.classList.toggle('visible');
+  if (!isVisible) {
+    const k = loadKey();
+    if (k) document.getElementById('apiKeyInput').value = k;
+  }
+}
+updateStatus();
+
+// ── Sources ──
+function getSources(query, tipo) {
+  const q = encodeURIComponent(query);
+  return {
+    'Foto libere': [
+      { label: 'Unsplash',  url: `https://unsplash.com/s/photos/${q}` },
+      { label: 'Pexels',    url: `https://www.pexels.com/search/${q}/` },
+      { label: 'Pixabay',   url: `https://pixabay.com/images/search/${q}/` },
+      { label: 'Freepik',   url: `https://www.freepik.com/search?query=${q}&type=photo` },
+      { label: 'Wikimedia', url: `https://commons.wikimedia.org/w/index.php?search=${q}&ns6=1` },
+    ],
+    'Archivi a pagamento': [
+      { label: 'Shutterstock', url: `https://www.shutterstock.com/search/${q}` },
+      { label: 'Adobe Stock',  url: `https://stock.adobe.com/it/search?k=${q}` },
+      { label: 'Getty Images', url: `https://www.gettyimages.it/immagini/${q}` },
+      { label: 'iStock',       url: `https://www.istockphoto.com/it/search/2/image?phrase=${q}` },
+    ],
+    'Motori di ricerca': [
+      { label: 'Google Immagini', url: `https://www.google.com/search?tbm=isch&q=${q}` },
+      { label: 'Bing Immagini',   url: `https://www.bing.com/images/search?q=${q}` },
+    ]
+  };
+}
+
+// ── Copy ──
+function copyQuery(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copiata ✓';
+    btn.classList.add('done');
+    setTimeout(() => { btn.textContent = 'Copia query'; btn.classList.remove('done'); }, 1600);
+  });
+}
+
+// ── Render ──
+function renderResults(data) {
+  let html = `
+    <div class="results-meta">
+      <div class="meta-label">Tema identificato</div>
+      <div class="tema">${data.tema}</div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="leg-pill" style="background:#5aaa3a"></div>Libera da diritti</div>
+      <div class="legend-item"><div class="leg-pill" style="background:#3a6fc8"></div>Editoriale / soggetto specifico</div>
+    </div>
+    <div id="cards">`;
+
+  data.suggerimenti.forEach((s) => {
+    const t = s.tipo === 'libera' ? 'libera' : 'editoriale';
+    const badgeLabel = t === 'libera' ? 'Libera da diritti' : 'Editoriale';
+    const sources = getSources(s.query, t);
+    const queryEsc = s.query.replace(/'/g, "\\'");
+
+    let groupsHtml = '';
+    for (const [groupName, items] of Object.entries(sources)) {
+      const linksHtml = items.map(l =>
+        `<a class="link-btn" href="${l.url}" target="_blank" rel="noopener">${l.label} ${EXT_ICON}</a>`
+      ).join('');
+      groupsHtml += `
+        <div class="source-group">
+          <div class="source-label">${groupName}</div>
+          <div class="links">${linksHtml}</div>
+        </div>`;
+    }
+
+    html += `
+      <div class="card">
+        <div class="card-head">
+          <div class="card-num ${t}">${s.id}</div>
+          <div class="card-desc">${s.descrizione}</div>
+        </div>
+        <div class="query-row">
+          <div class="query-box">${s.query}</div>
+          <button class="copy-btn" onclick="copyQuery(this,'${queryEsc}')">Copia query</button>
+        </div>
+        <div><span class="badge ${t}">${badgeLabel}</span></div>
+        ${groupsHtml}
+      </div>`;
+  });
+
+  html += '</div>';
+  document.getElementById('out').innerHTML = html;
+}
+
+// ── Analyze ──
+async function analyze() {
+  const text = document.getElementById('article').value.trim();
+  const key  = loadKey();
+
+  if (!text) { alert('Incolla prima il testo dell\'articolo.'); return; }
+  if (!key)  {
+    document.getElementById('apiPanel').classList.add('visible');
+    document.getElementById('apiKeyInput').focus();
+    return;
+  }
+
+  const btn = document.getElementById('btn');
+  const out = document.getElementById('out');
+  btn.disabled = true;
+  out.innerHTML = '<div class="loading"><span class="spinner"></span>Analisi in corso…</div>';
+
+  const prompt = `Sei un esperto di ricerca immagini per riviste B2B industriali e tecnologiche. Analizza l'articolo seguente e suggerisci 7 immagini fotografiche da ricercare per accompagnarlo.
+
+Per ogni suggerimento:
+- Descrivi brevemente in italiano che tipo di immagine cercare (es. "Fotografia di un impianto petrolifero offshore", "Ritratto di Mario Rossi, CEO di Siemens")
+- Fornisci una query di ricerca in INGLESE, specifica e mirata, ottimizzata per stock photo site internazionali
+- Classifica: "libera" se è un soggetto generico reperibile su Unsplash/Pexels, oppure "editoriale" se si tratta di persona specifica, evento reale, prodotto brandizzato o luogo iconico
+- Suggerisci SOLO fotografie reali. Mai illustrazioni, grafiche vettoriali o infografiche.
+
+Rispondi SOLO con JSON valido, nessun backtick né markdown:
+{"tema":"breve descrizione tema principale","suggerimenti":[{"id":1,"descrizione":"...","query":"...","tipo":"libera"},{"id":2,"descrizione":"...","query":"...","tipo":"editoriale"}]}
+
+Articolo: ${text.substring(0, 5000)}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error?.message || `HTTP ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const raw  = data.content.map(i => i.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    renderResults(JSON.parse(clean));
+
+  } catch (e) {
+    out.innerHTML = `<div class="error"><strong>Errore:</strong> ${e.message}. Controlla che la API key sia corretta e riprova.</div>`;
+  }
+
+  btn.disabled = false;
+}
+
+// Enter on textarea (Ctrl/Cmd + Enter)
+document.getElementById('article').addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') analyze();
+});
+</script>
+</body>
+</html>
